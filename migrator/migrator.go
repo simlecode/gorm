@@ -531,8 +531,11 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		}
 	}
 
-	if alterColumn && !field.IgnoreMigration {
-		return m.DB.Migrator().AlterColumn(value, field.DBName)
+	if alterColumn {
+		if !field.IgnoreMigration {
+			return m.DB.Migrator().AlterColumn(value, field.DBName)
+		}
+		fmt.Println("alterColumn: ", alterColumn, "IgnoreMigration: ", field.IgnoreMigration)
 	}
 
 	return nil
