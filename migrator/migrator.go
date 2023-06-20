@@ -437,6 +437,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		isSameType  = fullDataType == realDataType
 	)
 
+	fmt.Println("MigrateColumn: ", isSameType, "field: ", field.DBName)
 	if !field.PrimaryKey {
 		// check type
 		if !strings.HasPrefix(fullDataType, realDataType) {
@@ -460,6 +461,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		if length, ok := columnType.Length(); length != int64(field.Size) {
 			if length > 0 && field.Size > 0 {
 				alterColumn = true
+				fmt.Printf("alterColumn: %s, Length, length: %v, field.Size: %v\n", field.Name, length, field.Size)
 			} else {
 				// has size in data type and not equal
 				// Since the following code is frequently called in the for loop, reg optimization is needed here
@@ -467,6 +469,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 				if !field.PrimaryKey &&
 					(len(matches2) == 1 && matches2[0][1] != fmt.Sprint(length) && ok) {
 					alterColumn = true
+					fmt.Printf("alterColumn: %s, Length2, length: %v, field.Size: %v, matches2: %v \n", field.Name, length, field.Size, matches2)
 				}
 			}
 		}
@@ -475,6 +478,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		if precision, _, ok := columnType.DecimalSize(); ok && int64(field.Precision) != precision {
 			if regexp.MustCompile(fmt.Sprintf("[^0-9]%d[^0-9]", field.Precision)).MatchString(m.DataTypeOf(field)) {
 				alterColumn = true
+				fmt.Printf("alterColumn: %s, DecimalSize, precision: %d, field.Precision: %d\n", field.Name, precision, field.Precision)
 			}
 		}
 	}
@@ -484,6 +488,7 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		// not primary key & database is nullable
 		if !field.PrimaryKey && nullable {
 			alterColumn = true
+			fmt.Printf("alterColumn: %s, Nullable, nullable: %v, field.NotNull: %v\n", field.Name, nullable, field.NotNull)
 		}
 	}
 
@@ -502,15 +507,18 @@ func (m Migrator) MigrateColumn(value interface{}, field *schema.Field, columnTy
 		if dvNotNull && !currentDefaultNotNull {
 			// default value -> null
 			alterColumn = true
+			fmt.Printf("default value, currentDefaultNotNull: %v, dvNotNull: %v \n", currentDefaultNotNull, dvNotNull)
 		} else if !dvNotNull && currentDefaultNotNull {
 			// null -> default value
 			alterColumn = true
+			fmt.Printf("default value, 2 currentDefaultNotNull: %v, dvNotNull: %v \n", currentDefaultNotNull, dvNotNull)
 		} else if (field.GORMDataType != schema.Time && dv != field.DefaultValue) ||
 			(field.GORMDataType == schema.Time && !strings.EqualFold(strings.TrimSuffix(dv, "()"), strings.TrimSuffix(field.DefaultValue, "()"))) {
 			// default value not equal
 			// not both null
 			if currentDefaultNotNull || dvNotNull {
 				alterColumn = true
+				fmt.Printf("default value, 3 currentDefaultNotNull: %v, dvNotNull: %v, dv: %v \n", currentDefaultNotNull, dvNotNull, dv)
 			}
 		}
 	}
